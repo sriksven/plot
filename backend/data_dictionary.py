@@ -65,6 +65,20 @@ DUCKDB DIALECT (important — this is DuckDB, NOT MySQL/Postgres):
   (dayofweek returns 0=Sunday..6=Saturday.)
 - Use CASE WHEN ... THEN ... ELSE ... END instead of IF().
 - Cast date text with CAST(collision_date AS DATE) before date functions.
+
+JOINS & CTEs (use freely when a question spans tables or has multiple steps):
+- All three tables join on case_id: collisions.case_id = parties.case_id =
+  victims.case_id. Use `JOIN parties USING (case_id)` etc.
+- parties and victims also share party_number within a case; join on BOTH
+  case_id AND party_number when matching a specific person to their party:
+    JOIN victims v ON p.case_id = v.case_id AND p.party_number = v.party_number
+- One collision has many parties and many victims. When counting collisions
+  after a join, use COUNT(DISTINCT c.case_id) to avoid fan-out double-counting.
+- Prefer WITH (CTE) clauses for multi-step questions (e.g. compute per-group
+  totals in one CTE, a filtered subset in another, then join/compare them).
+  DuckDB fully supports multiple CTEs, nested CTEs, and subqueries.
+- Aggregate or filter inside a CTE before joining the 18.7M-row parties table
+  when possible, so the join stays small and fast.
 """
 
 

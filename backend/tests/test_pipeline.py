@@ -19,6 +19,18 @@ def test_answer_question_happy_path(monkeypatch):
     assert result.error is None
 
 
+def test_llm_exception_returns_error_not_raises(monkeypatch):
+    def boom(question):
+        raise RuntimeError("401 Incorrect API key provided")
+
+    monkeypatch.setattr(pipeline.llm, "generate_sql", boom)
+    result = pipeline.answer_question("anything")
+    # must not raise; must surface a clean error so the UI never hangs
+    assert result.error is not None
+    assert "401" in result.error
+    assert result.rows == []
+
+
 def test_regenerates_once_on_bad_sql(monkeypatch):
     calls = {"n": 0}
 

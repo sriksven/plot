@@ -26,11 +26,19 @@ class AnswerResult:
 def answer_question(question: str) -> AnswerResult:
     regenerated = False
     last_error = None
-    gen = llm.generate_sql(question)
-    total_usage = gen.usage
+    last_sql = ""
+    total_usage = llm.Usage(0, 0, 0)
+    prompt = question
 
     for attempt in range(2):
         try:
+            gen = llm.generate_sql(prompt)
+            total_usage = llm.Usage(
+                total_usage.prompt_tokens + gen.usage.prompt_tokens,
+                total_usage.completion_tokens + gen.usage.completion_tokens,
+                total_usage.total_tokens + gen.usage.total_tokens,
+            )
+            last_sql = gen.sql
             safe_sql = guard_sql(gen.sql, max_rows=_settings.max_raw_rows)
             qr = db.run_query(safe_sql)
             chart_spec = build_chart_spec(gen.chart_type, qr.columns, qr.rows)
@@ -40,21 +48,14 @@ def answer_question(question: str) -> AnswerResult:
                 chart_type=chart_spec["type"], regenerated=regenerated,
                 usage=total_usage, query_ms=qr.query_ms, error=None,
             )
-        except (SqlGuardError, Exception) as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 — any failure (LLM auth, SQL, exec)
             last_error = str(e)
             if attempt == 0:
                 regenerated = True
-                gen = llm.generate_sql(
-                    f"{question}\n\nPrevious SQL failed: {last_error}. Fix it."
-                )
-                total_usage = llm.Usage(
-                    total_usage.prompt_tokens + gen.usage.prompt_tokens,
-                    total_usage.completion_tokens + gen.usage.completion_tokens,
-                    total_usage.total_tokens + gen.usage.total_tokens,
-                )
+                prompt = f"{question}\n\nPrevious SQL failed: {last_error}. Fix it."
 
     return AnswerResult(
-        question=question, restatement=question, sql=gen.sql, columns=[], rows=[],
+        question=question, restatement=question, sql=last_sql, columns=[], rows=[],
         chart_spec={"type": "none"}, chart_type="none", regenerated=regenerated,
         usage=total_usage, query_ms=0.0, error=last_error,
     )

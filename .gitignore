@@ -1,6 +1,7 @@
 # Secrets
 .env
 .env.*
+!.env.example
 
 # Data (large source + derived files — never commit)
 *.sqlite
@@ -11,6 +12,9 @@ data/
 
 # Docs (per project instruction: docs folder is gitignored)
 docs/
+
+# Runtime metrics (logs, db, generated report)
+metrics/
 
 # Python
 __pycache__/

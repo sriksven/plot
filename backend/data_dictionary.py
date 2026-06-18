@@ -53,6 +53,18 @@ RULES:
   EXTRACT(year FROM CAST(collision_date AS DATE)).
 - County/make/weather values are lowercase.
 - Always return aggregated, chart-friendly results when the question is analytical.
+
+DUCKDB DIALECT (important — this is DuckDB, NOT MySQL/Postgres):
+- Do NOT use FIELD(), IF(), or other MySQL-only functions.
+- To order results by day of week, GROUP BY the numeric weekday and present the
+  name, e.g.:
+    SELECT dayname(CAST(collision_date AS DATE)) AS day_of_week, COUNT(*) AS n
+    FROM collisions
+    GROUP BY day_of_week, dayofweek(CAST(collision_date AS DATE))
+    ORDER BY dayofweek(CAST(collision_date AS DATE));
+  (dayofweek returns 0=Sunday..6=Saturday.)
+- Use CASE WHEN ... THEN ... ELSE ... END instead of IF().
+- Cast date text with CAST(collision_date AS DATE) before date functions.
 """
 
 

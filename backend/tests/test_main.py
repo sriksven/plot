@@ -1,5 +1,12 @@
+import pytest
 from fastapi.testclient import TestClient
 from backend import main, pipeline, llm
+
+
+@pytest.fixture(autouse=True)
+def _no_metrics_writes(monkeypatch):
+    """Endpoint tests must not pollute the real metrics log."""
+    monkeypatch.setattr(main.metrics, "record", lambda *a, **k: None)
 
 
 def _fake_result():

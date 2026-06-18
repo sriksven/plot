@@ -1,0 +1,29 @@
+# Secrets
+.env
+.env.*
+
+# Data (large source + derived files — never commit)
+*.sqlite
+*.sqlite-journal
+archive.zip
+data/
+*.parquet
+
+# Docs (per project instruction: docs folder is gitignored)
+docs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# OS
+.DS_Store
